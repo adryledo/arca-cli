@@ -1,0 +1,22 @@
+# Winget Manifest for ARCA CLI
+PackageIdentifier: ARCA.CLI
+PackageVersion: 1.0.0
+PackageName: ARCA CLI
+Publisher: ARCA
+License: MIT
+ShortDescription: Asset Resolution for AI Assistants. Manage versioned prompts and skills.
+Installers:
+  - Architecture: x64
+    InstallerType: zip
+    InstallerUrl: https://github.com/adryledo/arca-cli/releases/download/v1.0.0/arca-windows-amd64.zip
+    NestedInstallerType: portable
+    NestedInstallerFiles:
+      - RelativePath: arca.exe
+        PortableCommandAlias: arca
+  - Architecture: arm64
+    InstallerType: zip
+    InstallerUrl: https://github.com/adryledo/arca-cli/releases/download/v1.0.0/arca-windows-arm64.zip
+    NestedInstallerType: portable
+    NestedInstallerFiles:
+      - RelativePath: arca.exe
+        PortableCommandAlias: arca
