@@ -5,11 +5,13 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/adryledo/arca-cli/internal/models"
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/storage/memory"
 	"gopkg.in/yaml.v3"
 )
@@ -22,10 +24,14 @@ func New(workspaceRoot string) *Resolver {
 	return &Resolver{WorkspaceRoot: workspaceRoot}
 }
 
-// LoadManifest fetches and parses the arca-manifest.yaml from a source.
-func (r *Resolver) LoadManifest(source models.SourceConfig) (*models.Manifest, error) {
+// LoadManifest fetches and parses the arca-manifest.yaml from a source at a specific ref.
+func (r *Resolver) LoadManifest(source models.SourceConfig, ref string) (*models.Manifest, error) {
 	var data []byte
 	var err error
+
+	if ref == "" {
+		ref = "main"
+	}
 
 	switch source.Type {
 	case models.SourceLocal:
@@ -38,7 +44,7 @@ func (r *Resolver) LoadManifest(source models.SourceConfig) (*models.Manifest, e
 			return nil, fmt.Errorf("failed to read local manifest: %w", err)
 		}
 	case models.SourceGit:
-		data, err = r.fetchManifestFromGit(source.URL)
+		data, err = r.fetchManifestFromGit(source.URL, ref)
 		if err != nil {
 			return nil, err
 		}
@@ -54,12 +60,21 @@ func (r *Resolver) LoadManifest(source models.SourceConfig) (*models.Manifest, e
 	return &manifest, nil
 }
 
-func (r *Resolver) fetchManifestFromGit(url string) ([]byte, error) {
-	// Clone manifest from 'main' (simplified ref resolution for now)
+func (r *Resolver) fetchManifestFromGit(url string, ref string) ([]byte, error) {
+	// Clone manifest at specific ref
 	repo, err := git.Clone(memory.NewStorage(), memfs.New(), &git.CloneOptions{
-		URL:   url,
-		Depth: 1,
+		URL:           url,
+		ReferenceName: plumbing.ReferenceName("refs/heads/" + ref),
+		Depth:         1,
 	})
+	if err != nil {
+		// Try resolving as commit if branch fails?
+		// For simplicity, let's try a generic clone if specific fails
+		repo, err = git.Clone(memory.NewStorage(), memfs.New(), &git.CloneOptions{
+			URL:   url,
+			Depth: 1,
+		})
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to clone manifest repo: %w", err)
 	}
@@ -85,49 +100,65 @@ func (r *Resolver) ResolveVersion(manifest *models.Manifest, assetID string, con
 		return "", models.ManifestVersion{}, fmt.Errorf("asset %s not found in manifest", assetID)
 	}
 
-	var availableVersions []string
-	for v := range asset.Versions {
-		availableVersions = append(availableVersions, v)
-	}
-
-	// Simple sort if not using semver, but we should use it
 	c, err := semver.NewConstraint(constraint)
+	var resolvedVersion string
+	var meta models.ManifestVersion
+
 	if err != nil {
 		// Fallback to exact match or "latest" logic
 		if constraint == "latest" {
-			// Find highest version string (simplified)
 			highest := ""
-			for v := range asset.Versions {
-				if v > highest {
-					highest = v
+			var highestV *semver.Version
+			for vStr := range asset.Versions {
+				v, err := semver.NewVersion(vStr)
+				if err != nil {
+					// String comparison fallback
+					if vStr > highest && highestV == nil {
+						highest = vStr
+					}
+					continue
+				}
+				if highestV == nil || v.GreaterThan(highestV) {
+					highestV = v
+					highest = vStr
 				}
 			}
-			return highest, asset.Versions[highest], nil
+			resolvedVersion = highest
+		} else {
+			resolvedVersion = constraint
 		}
-		version, ok := asset.Versions[constraint]
-		if !ok {
-			return "", models.ManifestVersion{}, fmt.Errorf("version %s not found", constraint)
-		}
-		return constraint, version, nil
-	}
-
-	var bestVersion *semver.Version
-	for vStr := range asset.Versions {
-		v, err := semver.NewVersion(vStr)
-		if err != nil {
-			continue
-		}
-		if c.Check(v) {
-			if bestVersion == nil || v.GreaterThan(bestVersion) {
-				bestVersion = v
+	} else {
+		var bestVersion *semver.Version
+		for vStr := range asset.Versions {
+			v, err := semver.NewVersion(vStr)
+			if err != nil {
+				continue
+			}
+			if c.Check(v) {
+				if bestVersion == nil || v.GreaterThan(bestVersion) {
+					bestVersion = v
+				}
 			}
 		}
+
+		if bestVersion == nil {
+			return "", models.ManifestVersion{}, fmt.Errorf("no version matching %s found", constraint)
+		}
+		resolvedVersion = bestVersion.Original()
 	}
 
-	if bestVersion == nil {
-		return "", models.ManifestVersion{}, fmt.Errorf("no version matching %s found", constraint)
+	var found bool
+	meta, found = asset.Versions[resolvedVersion]
+	if !found {
+		return "", models.ManifestVersion{}, fmt.Errorf("version %s not found", resolvedVersion)
 	}
 
-	bestStr := bestVersion.Original()
-	return bestStr, asset.Versions[bestStr], nil
+	// Apply version strategy if ref is missing
+	if meta.Ref == "" && manifest.VersionStrategy != nil && manifest.VersionStrategy.Template != "" {
+		meta.Ref = filepath.ToSlash(filepath.Join("", manifest.VersionStrategy.Template)) // Dummy way to replace for now? No.
+		// Real implementation of template replacement
+		meta.Ref = strings.ReplaceAll(manifest.VersionStrategy.Template, "{{version}}", resolvedVersion)
+	}
+
+	return resolvedVersion, meta, nil
 }

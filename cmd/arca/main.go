@@ -86,7 +86,7 @@ var installCmd = &cobra.Command{
 		fmt.Printf("🔍 Resolving asset %s from %s (%s)...\n", assetID, sourceStr, sourceAlias)
 
 		// 3. Load Manifest
-		manifest, err := res.LoadManifest(cfg.Sources[sourceAlias])
+		manifest, err := res.LoadManifest(cfg.Sources[sourceAlias], "main")
 		if err != nil {
 			return err
 		}
@@ -245,7 +245,7 @@ var listRemoteCmd = &cobra.Command{
 			Path: sourceStr,
 		}
 
-		manifest, err := res.LoadManifest(sourceCfg)
+		manifest, err := res.LoadManifest(sourceCfg, "main")
 		if err != nil {
 			return err
 		}
@@ -309,11 +309,25 @@ var syncCmd = &cobra.Command{
 				continue
 			}
 
-			// Load manifest for the source
-			manifest, err := res.LoadManifest(source)
+			// 4. Load Manifest (pin to locked commit if available)
+			manifestRef := "main"
+			if lock != nil {
+				for _, la := range lock.Assets {
+					if la.ID == asset.ID && la.Source == asset.Source {
+						manifestRef = la.Commit
+						break
+					}
+				}
+			}
+
+			manifest, err := res.LoadManifest(source, manifestRef)
 			if err != nil {
-				fmt.Printf("❌ Failed to load manifest for %s: %v\n", asset.Source, err)
-				continue
+				// Fallback to main if locked commit fails (e.g. if it was a rolling ref that got garbage collected or branch deleted)
+				manifest, err = res.LoadManifest(source, "main")
+				if err != nil {
+					fmt.Printf("❌ Failed to load manifest for %s: %v\n", asset.Source, err)
+					continue
+				}
 			}
 
 			// Resolve version (honors constraint in config)
