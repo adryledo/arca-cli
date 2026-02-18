@@ -91,129 +91,140 @@ var installCmd = &cobra.Command{
 			return err
 		}
 
-		// 4. Resolve version
-		version, meta, err := res.ResolveVersion(manifest, assetID, versionConstraint)
+		// 4. Resolve full graph
+		assets, err := res.ResolveGraph(manifest, assetID, versionConstraint)
 		if err != nil {
 			return err
 		}
 
-		fmt.Printf("✅ Resolved %s at %s\n", assetID, version)
+		fmt.Printf("✅ Resolved %d asset(s) including dependencies\n", len(assets))
 
-		// 5. Download/Reference content
-		isDir := manifest.Assets[assetID].Kind == models.KindSkill
-		commitSHA := ""
-		assetPath := cache.GetAssetPath(sourceAlias, assetID, version, isDir)
-		cacheDir, _ := cache.EnsureDir(sourceAlias, assetID, version)
-
-		if stype == models.SourceLocal {
-			absPath := filepath.Join(sourceStr, meta.Path)
-			if isDir {
-				// Copy directory
-				// Simplified: just assuming it works for now
-				commitSHA = "local"
-			} else {
-				data, err := os.ReadFile(absPath)
-				if err != nil {
-					return err
-				}
-				err = os.WriteFile(assetPath, data, 0644)
-				if err != nil {
-					return err
-				}
-				commitSHA = "local"
-			}
-		} else {
-			gitDownloader := downloader.NewGitDownloader()
-			ref := meta.Ref
-			if ref == "" {
-				ref = "main"
-			}
-			if isDir {
-				sha, err := gitDownloader.FetchDirectory(sourceStr, meta.Path, ref, cacheDir)
-				if err != nil {
-					return err
-				}
-				commitSHA = sha
-			} else {
-				data, sha, err := gitDownloader.FetchFile(sourceStr, meta.Path, ref)
-				if err != nil {
-					return err
-				}
-				err = os.WriteFile(assetPath, []byte(data), 0644)
-				if err != nil {
-					return err
-				}
-				commitSHA = sha
-			}
-		}
-
-		// 6. Project
-		if targetPath == "" {
-			ext := ".md"
-			if isDir {
-				ext = ""
-			}
-			targetPath = fmt.Sprintf(".arca/assets/%s/%s%s", sourceAlias, assetID, ext)
-		}
-
-		_, err = proj.Project(assetPath, targetPath, isDir)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("🚀 Projected to %s\n", targetPath)
-
-		// 7. Update Config Entry
-
-		// 8. Update Config Entry
-		entry := models.AssetEntry{
-			ID:      assetID,
-			Source:  sourceAlias,
-			Version: version,
-			Projections: map[string]string{
-				projName: targetPath,
-			},
-		}
-		cfgMgr.AddAsset(cfg, entry)
-
-		if err := cfgMgr.SaveConfig(cfg); err != nil {
-			return fmt.Errorf("failed to save config: %w", err)
-		}
-
-		// 8. Update Lockfile
 		lock, err := cfgMgr.LoadLockfile()
 		if err != nil {
 			return err
 		}
 
-		var contentHash string
-		if isDir {
-			contentHash, err = hasher.HashDir(assetPath)
-		} else {
-			contentHash, err = hasher.HashFile(assetPath)
-		}
-		if err != nil {
-			return fmt.Errorf("failed to hash asset: %w", err)
-		}
-		locked := models.LockedAsset{
-			ID:         assetID,
-			Version:    version,
-			Source:     sourceAlias,
-			Commit:     commitSHA,
-			SHA256:     contentHash,
-			ResolvedAt: time.Now(),
-		}
+		for _, item := range assets {
+			fmt.Printf("📦 Installing %s@%s...\n", item.ID, item.Version)
 
-		// Update or Add to lock
-		found := false
-		for i, la := range lock.Assets {
-			if la.ID == assetID && la.Source == sourceAlias {
-				lock.Assets[i] = locked
-				found = true
-				break
+			isDir := item.Kind == models.KindSkill
+			commitSHA := ""
+			assetPath := cache.GetAssetPath(sourceAlias, item.ID, item.Version, isDir)
+			cacheDir, _ := cache.EnsureDir(sourceAlias, item.ID, item.Version)
+
+			if stype == models.SourceLocal {
+				absPath := filepath.Join(sourceStr, item.Meta.Path)
+				if isDir {
+					commitSHA = "local"
+				} else {
+					data, err := os.ReadFile(absPath)
+					if err != nil {
+						return err
+					}
+					err = os.WriteFile(assetPath, data, 0644)
+					if err != nil {
+						return err
+					}
+					commitSHA = "local"
+				}
+			} else {
+				gitDownloader := downloader.NewGitDownloader()
+				ref := item.Meta.Ref
+				if ref == "" {
+					ref = "main"
+				}
+				if isDir {
+					sha, err := gitDownloader.FetchDirectory(sourceStr, item.Meta.Path, ref, cacheDir)
+					if err != nil {
+						return err
+					}
+					commitSHA = sha
+				} else {
+					data, sha, err := gitDownloader.FetchFile(sourceStr, item.Meta.Path, ref)
+					if err != nil {
+						return err
+					}
+					err = os.WriteFile(assetPath, []byte(data), 0644)
+					if err != nil {
+						return err
+					}
+					commitSHA = sha
+				}
+			}
+
+			// Projection
+			actualTarget := targetPath
+			actualProjName := projName
+
+			if item.ID != assetID {
+				// Dependencies go to default location
+				ext := ".md"
+				if isDir {
+					ext = ""
+				}
+				actualTarget = fmt.Sprintf(".arca/assets/%s/%s%s", sourceAlias, item.ID, ext)
+				actualProjName = "default"
+			} else if actualTarget == "" {
+				ext := ".md"
+				if isDir {
+					ext = ""
+				}
+				actualTarget = fmt.Sprintf(".arca/assets/%s/%s%s", sourceAlias, item.ID, ext)
+			}
+
+			_, err = proj.Project(assetPath, actualTarget, isDir)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("   🔗 Projected %s to %s\n", item.ID, actualTarget)
+
+			// Update Config Entry (Only for the root asset)
+			if item.ID == assetID {
+				entry := models.AssetEntry{
+					ID:      item.ID,
+					Source:  sourceAlias,
+					Version: item.Version,
+					Projections: map[string]string{
+						actualProjName: actualTarget,
+					},
+				}
+				cfgMgr.AddAsset(cfg, entry)
+			}
+
+			// Update Lockfile Entry
+			var contentHash string
+			if isDir {
+				contentHash, err = hasher.HashDir(assetPath)
+			} else {
+				contentHash, err = hasher.HashFile(assetPath)
+			}
+			if err != nil {
+				return fmt.Errorf("failed to hash asset: %w", err)
+			}
+			locked := models.LockedAsset{
+				ID:         item.ID,
+				Version:    item.Version,
+				Source:     sourceAlias,
+				Commit:     commitSHA,
+				SHA256:     contentHash,
+				ResolvedAt: time.Now(),
+			}
+
+			found := false
+			for i, la := range lock.Assets {
+				if la.ID == item.ID && la.Source == sourceAlias {
+					lock.Assets[i] = locked
+					found = true
+					break
+				}
+			}
+			if !found {
+				lock.Assets = append(lock.Assets, locked)
 			}
 		}
-		if !found {
-			lock.Assets = append(lock.Assets, locked)
+
+		if err := cfgMgr.SaveConfig(cfg); err != nil {
+			return fmt.Errorf("failed to save config: %w", err)
 		}
 
 		if err := cfgMgr.SaveLockfile(lock); err != nil {
@@ -300,7 +311,17 @@ var syncCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Println("🔄 Syncing assets...")
+		// Use a map to collect all assets to sync (avoids duplicates)
+		type syncItem struct {
+			ID          string
+			Source      models.SourceConfig
+			SourceAlias string
+			Version     string
+			Meta        models.ManifestVersion
+			Kind        models.AssetKind
+			Projections map[string]string
+		}
+		toSync := make(map[string]syncItem)
 
 		for _, asset := range cfg.Assets {
 			source, ok := cfg.Sources[asset.Source]
@@ -309,7 +330,7 @@ var syncCmd = &cobra.Command{
 				continue
 			}
 
-			// 4. Load Manifest (pin to locked commit if available)
+			// Determine manifest revision (pin to locked commit if available)
 			manifestRef := "main"
 			if lock != nil {
 				for _, la := range lock.Assets {
@@ -322,7 +343,6 @@ var syncCmd = &cobra.Command{
 
 			manifest, err := res.LoadManifest(source, manifestRef)
 			if err != nil {
-				// Fallback to main if locked commit fails (e.g. if it was a rolling ref that got garbage collected or branch deleted)
 				manifest, err = res.LoadManifest(source, "main")
 				if err != nil {
 					fmt.Printf("❌ Failed to load manifest for %s: %v\n", asset.Source, err)
@@ -330,28 +350,53 @@ var syncCmd = &cobra.Command{
 				}
 			}
 
-			// Resolve version (honors constraint in config)
-			version, meta, err := res.ResolveVersion(manifest, asset.ID, asset.Version)
+			// Resolve full graph for this top-level asset
+			graph, err := res.ResolveGraph(manifest, asset.ID, asset.Version)
 			if err != nil {
-				fmt.Printf("❌ Failed to resolve %s: %v\n", asset.ID, err)
+				fmt.Printf("❌ Failed to resolve graph for %s: %v\n", asset.ID, err)
 				continue
 			}
 
-			// 5. Fetch content
-			isDir := manifest.Assets[asset.ID].Kind == models.KindSkill
-			commitSHA := ""
-			assetPath := cache.GetAssetPath(asset.Source, asset.ID, version, isDir)
-			cacheDir, _ := cache.EnsureDir(asset.Source, asset.ID, version)
+			for id, item := range graph {
+				key := asset.Source + ":" + id
+				projections := make(map[string]string)
+				if id == asset.ID {
+					projections = asset.Projections
+				} else {
+					ext := ".md"
+					if item.Kind == models.KindSkill {
+						ext = ""
+					}
+					projections["default"] = fmt.Sprintf(".arca/assets/%s/%s%s", asset.Source, id, ext)
+				}
 
-			if source.Type == models.SourceLocal {
-				absPath := filepath.Join(source.Path, meta.Path)
+				toSync[key] = syncItem{
+					ID:          id,
+					Source:      source,
+					SourceAlias: asset.Source,
+					Version:     item.Version,
+					Meta:        item.Meta,
+					Kind:        item.Kind,
+					Projections: projections,
+				}
+			}
+		}
+
+		for _, item := range toSync {
+			version := item.Version
+			isDir := item.Kind == models.KindSkill
+			commitSHA := ""
+			assetPath := cache.GetAssetPath(item.SourceAlias, item.ID, version, isDir)
+			cacheDir, _ := cache.EnsureDir(item.SourceAlias, item.ID, version)
+
+			if item.Source.Type == models.SourceLocal {
+				absPath := filepath.Join(item.Source.Path, item.Meta.Path)
 				if isDir {
-					// Directory logic
 					commitSHA = "local"
 				} else {
 					data, err := os.ReadFile(absPath)
 					if err != nil {
-						fmt.Printf("❌ Failed to read %s: %v\n", asset.ID, err)
+						fmt.Printf("❌ Failed to read %s: %v\n", item.ID, err)
 						continue
 					}
 					_ = os.WriteFile(assetPath, data, 0644)
@@ -359,21 +404,21 @@ var syncCmd = &cobra.Command{
 				}
 			} else {
 				gitDownloader := downloader.NewGitDownloader()
-				ref := meta.Ref
+				ref := item.Meta.Ref
 				if ref == "" {
 					ref = "main"
 				}
 				if isDir {
-					sha, err := gitDownloader.FetchDirectory(source.URL, meta.Path, ref, cacheDir)
+					sha, err := gitDownloader.FetchDirectory(item.Source.URL, item.Meta.Path, ref, cacheDir)
 					if err != nil {
-						fmt.Printf("❌ Failed to fetch %s: %v\n", asset.ID, err)
+						fmt.Printf("❌ Failed to fetch %s: %v\n", item.ID, err)
 						continue
 					}
 					commitSHA = sha
 				} else {
-					data, sha, err := gitDownloader.FetchFile(source.URL, meta.Path, ref)
+					data, sha, err := gitDownloader.FetchFile(item.Source.URL, item.Meta.Path, ref)
 					if err != nil {
-						fmt.Printf("❌ Failed to fetch %s: %v\n", asset.ID, err)
+						fmt.Printf("❌ Failed to fetch %s: %v\n", item.ID, err)
 						continue
 					}
 					_ = os.WriteFile(assetPath, []byte(data), 0644)
@@ -381,15 +426,15 @@ var syncCmd = &cobra.Command{
 				}
 			}
 
-			// 6. Project to all defined locations
-			for name, target := range asset.Projections {
+			// Project to all defined locations
+			for _, target := range item.Projections {
 				_, err = proj.Project(assetPath, target, isDir)
 				if err != nil {
-					fmt.Printf("❌ Failed to project %s (%s) to %s: %v\n", asset.ID, name, target, err)
+					fmt.Printf("❌ Failed to project %s to %s: %v\n", item.ID, target, err)
 				}
 			}
 
-			// 7. Update Lockfile Entry
+			// Update Lockfile Entry
 			var contentHash string
 			if isDir {
 				contentHash, _ = hasher.HashDir(assetPath)
@@ -397,18 +442,17 @@ var syncCmd = &cobra.Command{
 				contentHash, _ = hasher.HashFile(assetPath)
 			}
 			locked := models.LockedAsset{
-				ID:         asset.ID,
+				ID:         item.ID,
 				Version:    version,
-				Source:     asset.Source,
+				Source:     item.SourceAlias,
 				Commit:     commitSHA,
 				SHA256:     contentHash,
 				ResolvedAt: time.Now(),
 			}
 
-			// Upsert into lock
 			found := false
 			for i, la := range lock.Assets {
-				if la.ID == asset.ID && la.Source == asset.Source {
+				if la.ID == item.ID && la.Source == item.SourceAlias {
 					lock.Assets[i] = locked
 					found = true
 					break
@@ -418,7 +462,7 @@ var syncCmd = &cobra.Command{
 				lock.Assets = append(lock.Assets, locked)
 			}
 
-			fmt.Printf("✅ Synced %s@%s\n", asset.ID, version)
+			fmt.Printf("✅ Synced %s@%s\n", item.ID, version)
 		}
 
 		if err := cfgMgr.SaveLockfile(lock); err != nil {

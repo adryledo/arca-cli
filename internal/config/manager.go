@@ -140,12 +140,26 @@ func (m *Manager) SaveLockfile(lock *models.Lockfile) error {
 }
 
 func (m *Manager) deriveAlias(input string) string {
-	// Simple alias derivation
-	clean := strings.TrimRight(input, "/")
-	parts := strings.Split(clean, "/")
-	if len(parts) > 0 {
-		name := parts[len(parts)-1]
-		return strings.TrimSuffix(name, ".git")
+	// Use filepath.Base to get the last component correctly on any OS
+	base := filepath.Base(filepath.ToSlash(input))
+	base = strings.TrimSuffix(base, ".git")
+
+	if base == "." || base == "/" || base == "" {
+		return "source"
 	}
-	return "source"
+
+	// Sanitize: allow only alphanumeric and hyphens/underscores
+	var sanitized strings.Builder
+	for _, r := range base {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '-' || r == '_' {
+			sanitized.WriteRune(r)
+		} else {
+			sanitized.WriteRune('-')
+		}
+	}
+	result := sanitized.String()
+	if result == "" {
+		return "source"
+	}
+	return result
 }

@@ -1,0 +1,6 @@
+
+# ARCA managed assets
+.arca/assets/awesome-arca/secure-api-guidelines.md
+.arca/assets/awesome-arca/base-security-rules.md
+.arca-assets.lock
+.arca-assets.yaml

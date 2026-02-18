@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/adryledo/arca-cli/internal/auth"
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -22,11 +23,16 @@ func NewGitDownloader() *GitDownloader {
 
 // FetchFile fetches a single file from a Git URL at a specific ref.
 func (g *GitDownloader) FetchFile(url, path, ref string) (string, string, error) {
-	repo, err := git.Clone(memory.NewStorage(), memfs.New(), &git.CloneOptions{
+	opts := &git.CloneOptions{
 		URL:           url,
 		Depth:         1,
-		ReferenceName: plumbing.NewBranchReferenceName(ref), // Simplified, should handle SHA/Tag
-	})
+		ReferenceName: plumbing.ReferenceName("refs/heads/" + ref),
+	}
+	if a := auth.GetGitAuth(); a != nil {
+		opts.Auth = a
+	}
+
+	repo, err := git.Clone(memory.NewStorage(), memfs.New(), opts)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to clone repo: %w", err)
 	}
@@ -55,11 +61,15 @@ func (g *GitDownloader) FetchFile(url, path, ref string) (string, string, error)
 
 // FetchDirectory fetches a directory and saves it to a local destination.
 func (g *GitDownloader) FetchDirectory(url, repoPath, ref, destDir string) (string, error) {
-	// For simplicity in this port, we clone to memory and then write to dest
-	repo, err := git.Clone(memory.NewStorage(), memfs.New(), &git.CloneOptions{
+	opts := &git.CloneOptions{
 		URL:   url,
 		Depth: 1,
-	})
+	}
+	if a := auth.GetGitAuth(); a != nil {
+		opts.Auth = a
+	}
+
+	repo, err := git.Clone(memory.NewStorage(), memfs.New(), opts)
 	if err != nil {
 		return "", err
 	}

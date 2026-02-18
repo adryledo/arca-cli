@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/adryledo/arca-cli/internal/auth"
 	"github.com/adryledo/arca-cli/internal/models"
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-git/v5"
@@ -62,18 +63,27 @@ func (r *Resolver) LoadManifest(source models.SourceConfig, ref string) (*models
 
 func (r *Resolver) fetchManifestFromGit(url string, ref string) ([]byte, error) {
 	// Clone manifest at specific ref
-	repo, err := git.Clone(memory.NewStorage(), memfs.New(), &git.CloneOptions{
+	opts := &git.CloneOptions{
 		URL:           url,
 		ReferenceName: plumbing.ReferenceName("refs/heads/" + ref),
 		Depth:         1,
-	})
+	}
+	if a := auth.GetGitAuth(); a != nil {
+		opts.Auth = a
+	}
+
+	repo, err := git.Clone(memory.NewStorage(), memfs.New(), opts)
 	if err != nil {
 		// Try resolving as commit if branch fails?
 		// For simplicity, let's try a generic clone if specific fails
-		repo, err = git.Clone(memory.NewStorage(), memfs.New(), &git.CloneOptions{
+		opts2 := &git.CloneOptions{
 			URL:   url,
 			Depth: 1,
-		})
+		}
+		if a := auth.GetGitAuth(); a != nil {
+			opts2.Auth = a
+		}
+		repo, err = git.Clone(memory.NewStorage(), memfs.New(), opts2)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to clone manifest repo: %w", err)
@@ -161,4 +171,54 @@ func (r *Resolver) ResolveVersion(manifest *models.Manifest, assetID string, con
 	}
 
 	return resolvedVersion, meta, nil
+}
+
+// ResolvedAssetGroup represents a group of assets that have been resolved.
+type ResolvedAssetGroup struct {
+	ID      string
+	Version string
+	Meta    models.ManifestVersion
+	Kind    models.AssetKind
+}
+
+// ResolveGraph recursively resolves an asset and its dependencies.
+func (r *Resolver) ResolveGraph(manifest *models.Manifest, initialID, initialConstraint string) (map[string]ResolvedAssetGroup, error) {
+	resolved := make(map[string]ResolvedAssetGroup)
+	queue := []struct {
+		id         string
+		constraint string
+	}{
+		{initialID, initialConstraint},
+	}
+
+	for len(queue) > 0 {
+		item := queue[0]
+		queue = queue[1:]
+
+		if _, ok := resolved[item.id]; ok {
+			continue
+		}
+
+		v, meta, err := r.ResolveVersion(manifest, item.id, item.constraint)
+		if err != nil {
+			return nil, err
+		}
+
+		asset := manifest.Assets[item.id]
+		resolved[item.id] = ResolvedAssetGroup{
+			ID:      item.id,
+			Version: v,
+			Meta:    meta,
+			Kind:    asset.Kind,
+		}
+
+		for depID, depConstraint := range asset.Dependencies {
+			queue = append(queue, struct {
+				id         string
+				constraint string
+			}{depID, depConstraint})
+		}
+	}
+
+	return resolved, nil
 }

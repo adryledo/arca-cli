@@ -1,0 +1,19 @@
+schema: "1.0"
+assets:
+    base-security-rules:
+        kind: instruction
+        description: Base rules for all security instructions
+        versions:
+            1.0.0:
+                path: instructions/base-security-rules.md
+    secure-api-guidelines:
+        kind: instruction
+        description: Updated via arca publish
+        dependencies:
+            base-security-rules: ">=1.0.0"
+        versions:
+            1.0.1:
+                ref: 8bd3342de4d74d7dbfb51a1c83cdbf2a09422999
+                path: instructions/secure-api-guidelines.instructions.md
+            1.0.2:
+                path: instructions/secure-api-guidelines.instructions.md

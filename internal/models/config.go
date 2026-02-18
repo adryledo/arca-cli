@@ -43,8 +43,8 @@ type AssetEntry struct {
 // --- Source Manifest (arca-manifest.yaml) ---
 
 type Manifest struct {
-	Schema          string                    `yaml:"schema"`
-	VersionStrategy *VersionStrategy          `yaml:"version-strategy,omitempty"`
+	Schema          string                   `yaml:"schema"`
+	VersionStrategy *VersionStrategy         `yaml:"version-strategy,omitempty"`
 	Assets          map[string]ManifestAsset `yaml:"assets"`
 }
 
@@ -53,15 +53,16 @@ type VersionStrategy struct {
 }
 
 type ManifestAsset struct {
-	Kind        AssetKind                  `yaml:"kind"`
-	Description string                     `yaml:"description,omitempty"`
-	Versions    map[string]ManifestVersion `yaml:"versions"`
+	Kind         AssetKind                  `yaml:"kind"`
+	Description  string                     `yaml:"description,omitempty"`
+	Dependencies map[string]string          `yaml:"dependencies,omitempty"` // asset-id -> version-constraint
+	Versions     map[string]ManifestVersion `yaml:"versions"`
 }
 
 type ManifestVersion struct {
-	Ref     string           `yaml:"ref,omitempty"`
-	Path    string           `yaml:"path"`
-	Runtime *AssetRuntime    `yaml:"runtime,omitempty"`
+	Ref     string        `yaml:"ref,omitempty"`
+	Path    string        `yaml:"path"`
+	Runtime *AssetRuntime `yaml:"runtime,omitempty"`
 }
 
 type AssetRuntime struct {
