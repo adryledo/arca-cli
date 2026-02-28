@@ -1,0 +1,16 @@
+schema: "1.0"
+sources:
+    maintainer:
+        type: local
+        path: ../maintainer
+assets:
+    - id: secure-api-guidelines
+      source: maintainer
+      version: 1.0.2
+      projections:
+        default: .arca/assets/maintainer/secure-api-guidelines.md
+    - id: base-security-rules
+      source: maintainer
+      version: 1.0.0
+      projections:
+        default: .arca/assets/maintainer/base-security-rules.md

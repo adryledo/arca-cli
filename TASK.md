@@ -1,0 +1,40 @@
+# ARCA CLI: Migration & Implementation Tasks
+
+- [x] **Project Foundation**
+    - [x] Initialize Go module `github.com/adryledo/arca-cli`
+    - [x] Define core models (Manifest, Config, Lockfile)
+    - [x] Implement deterministic hashing (SHA-256 + LF normalization)
+- [x] **Core Logic (Internal Packages)**
+    - [x] **Resolver**: Manifest fetching and SemVer version resolution
+    - [x] **Downloader**: Git (go-git) and local asset fetching
+    - [x] **Cache**: Centralized storage management (`~/.arca-cache`)
+    - [x] **Projector**: Symlink management and `.gitignore` integration
+    - [x] **Config Manager**: YAML/JSON persistence for project state
+- [x] **CLI Commands (Cobra)**
+    - [x] `arca install`: End-to-end asset installation
+    - [x] `arca sync`: Project state reconciliation
+    - [x] `arca list`: Installed assets overview
+    - [x] `arca list-remote`: Remote asset discovery
+    - [x] `arca publish`: Maintainer version management & checkpointing
+- [x] **Robustness & Interop**
+    - [x] Multi-IDE Projection support (Mapping aliases)
+    - [x] Directory-based assets (Skills) support
+    - [x] Global `--json` output for tool integration
+    - [x] Support for `version-strategy` templates
+    - [x] Comprehensive unit tests for Hasher and Resolver
+    - [x] Advanced Git Auth (SSH-like via tokens)
+    - [x] Transitive Dependencies resolution
+- [x] **Documentation & Specification**
+    - [x] Finalize Protocol V1 Specification
+    - [x] Create Getting Started guide
+    - [x] Build README and purposeful docs
+- [ ] **Next Steps**
+    - [x] VS Code Extension Migration (TS logic -> arca binary)
+    - [ ] Generate instructions file or AGENTS.md. Update docs on every change.
+    - [ ] 'prompts' kind don't exist anymore, remove all references to them
+    - [ ] Add 'kind' to the assets files.
+    - [ ] `arca init --instructions=<instructionsFolder> --prompts=<promptsFolder> --skills=<skillsFolder>` command that browses the folders and creates the manifest file.
+    - [ ] When installing a skill, check if it uses an mcp tool and return a warning if the tool is not installed.
+    - [ ] Command to return manifest file instead of hardcoding in the client.
+    - [ ] Roadmap, contributing, development guidelines, permissions on main branch.
+    - [ ] Installer generation (Homebrew, Winget automation)

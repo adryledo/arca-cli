@@ -1,0 +1,22 @@
+{
+  "assets": [
+    {
+      "id": "secure-api-guidelines",
+      "version": "1.0.2",
+      "source": "maintainer",
+      "commit": "local",
+      "sha256": "d86d17ad3405b6042a2627da7a23eaf9808a81106c448db02505d29636778fd2",
+      "manifestHash": "",
+      "resolvedAt": "2026-02-18T20:16:14.1138104+01:00"
+    },
+    {
+      "id": "base-security-rules",
+      "version": "1.0.0",
+      "source": "maintainer",
+      "commit": "local",
+      "sha256": "21d38656b4557089cc8143a966a30351b2f2ac6520043f978a0334cb70895e04",
+      "manifestHash": "",
+      "resolvedAt": "2026-02-18T20:16:14.1180121+01:00"
+    }
+  ]
+}

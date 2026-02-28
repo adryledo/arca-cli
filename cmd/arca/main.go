@@ -574,7 +574,7 @@ var publishCmd = &cobra.Command{
 		if !ok {
 			asset = models.ManifestAsset{
 				Kind:        kind,
-				Description: "Added via arca publish",
+				Description: "Added via arca publish", // TODO: Retrieve from 'description' in 'Front Matter' of the asset file.
 				Versions:    make(map[string]models.ManifestVersion),
 			}
 		} else {
