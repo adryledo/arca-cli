@@ -6,7 +6,6 @@ import "time"
 type AssetKind string
 
 const (
-	KindPrompt      AssetKind = "prompt"
 	KindSkill       AssetKind = "skill"
 	KindInstruction AssetKind = "instruction"
 )

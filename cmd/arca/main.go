@@ -25,7 +25,7 @@ var rootCmd = &cobra.Command{
 	Use:   "arca",
 	Short: "ARCA - Asset Resolution for AI Assistants",
 	Long: `ARCA is a high-performance CLI for managing versioned agentic assets 
-(prompts, skills, instructions) from Git-based or local manifests.`,
+(skills, instructions) from Git-based or local manifests.`,
 }
 
 var (
@@ -566,8 +566,8 @@ var publishCmd = &cobra.Command{
 
 		// 3. Update manifest
 		kind := models.AssetKind(kindStr)
-		if kind != models.KindPrompt && kind != models.KindSkill && kind != models.KindInstruction {
-			return fmt.Errorf("invalid asset kind: %s. Use 'prompt', 'skill', or 'instruction'", kindStr)
+		if kind != models.KindSkill && kind != models.KindInstruction {
+			return fmt.Errorf("invalid asset kind: %s. Use 'skill', or 'instruction'", kindStr)
 		}
 
 		asset, ok := manifest.Assets[assetID]

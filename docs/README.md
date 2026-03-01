@@ -1,6 +1,6 @@
 # ARCA: Asset Resolution for AI Assistants
 
-ARCA is a decentralized standard for distributing, versioning, and consuming agentic assets (prompts, rules, skills, instructions).
+ARCA is a decentralized standard for distributing, versioning, and consuming agentic assets (rules, skills, instructions).
 
 ## What is ARCA?
 
@@ -11,7 +11,7 @@ ARCA provides a unified way for AI assistants—including coding agents (Copilot
 - **Decentralized Registry**: Host your assets in any Git repository or local folder.
 - **Deterministic Locking**: Reproducible environments with `.arca-assets.lock`.
 - **High Performance**: Zero-dependency Go CLI for fast resolution and syncing.
-- **Multi-Assistant Projections**: Sync one asset to multiple locations (e.g., `.cursor/prompts` and `.github/prompts`).
+- **Multi-Assistant Projections**: Sync one asset to multiple locations (e.g., `.cursor/rules` and `.github/instructions`).
 - **Strict Integrity**: SHA-256 verification with mandatory LF-normalization for cross-platform consistency.
 - **Mobile Friendly**: Built to run on Windows, macOS, Linux, Android, and iOS.
 

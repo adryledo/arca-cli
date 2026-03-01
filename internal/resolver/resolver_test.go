@@ -14,7 +14,7 @@ func TestResolveVersion(t *testing.T) {
 		},
 		Assets: map[string]models.ManifestAsset{
 			"test-asset": {
-				Kind: models.KindPrompt,
+				Kind: models.KindInstruction,
 				Versions: map[string]models.ManifestVersion{
 					"1.0.0": {Path: "p1.md"},
 					"1.1.0": {Path: "p2.md", Ref: "special-tag"},

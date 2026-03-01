@@ -2,10 +2,10 @@
 
 ## The Problem: Asset Fragmentation
 
-Today, AI assistants (coding agents, web agents, etc.) rely on specialized assets like prompts, system instructions, and multi-file "skills". These assets are often hardcoded into applications or scattered across repositories without version control.
+Today, AI assistants (coding agents, web agents, etc.) rely on specialized assets like system instructions and multi-file "skills". These assets are often hardcoded into applications or scattered across repositories without version control.
 
 This leads to several issues:
-- **Version Drift**: Different developers or tools using outdated versions of a prompt.
+- **Version Drift**: Different developers or tools using outdated versions of an instruction.
 - **No Traceability**: Losing track of why a specific instruction was changed.
 - **Platform Silos**: A "skill" built for one assistant is hard to use in another.
 - **Security Risks**: Using unverified assets without integrity checks.

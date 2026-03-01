@@ -1,6 +1,6 @@
 # ARCA v1.0.0: Formal Specification
 
-ARCA (Asset Resolution for AI Assistants) is a decentralized standard for distributing, versioning, and consuming agentic assets (prompts, skills, instructions).
+ARCA (Asset Resolution for AI Assistants) is a decentralized standard for distributing, versioning, and consuming agentic assets (skills, instructions).
 
 ## 1. Actors
 
@@ -21,7 +21,7 @@ ARCA (Asset Resolution for AI Assistants) is a decentralized standard for distri
 schema: 1.0
 assets:
   <asset-id>:
-    kind: prompt | skill | instruction
+    kind: skill | instruction
     description: "Brief description"
     versions:
       <version-string>:
@@ -43,8 +43,8 @@ assets:
     source: my-org
     version: "^1.2.0"
     projections:
-      default: ".github/prompts/refactor.md"
-      cursor: ".cursor/prompts/refactor.md"
+      default: ".github/instructions/refactor.md"
+      cursor: ".cursor/instructions/refactor.md"
 ```
 
 ### 2.3 The Lockfile (`.arca-assets.lock`)

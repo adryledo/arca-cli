@@ -10,14 +10,14 @@ Located at the root of an asset source, this file defines what assets are availa
 schema: 1.0
 assets:
   sql-expert:
-    kind: prompt
+    kind: instruction
     description: "Transforms natural language to SQL queries"
     versions:
       1.0.0:
-        path: "prompts/sql.md"
+        path: "instructions/sql.md"
         ref: 05ffdaafccb31569e3f8dd5a277fe83344231c11
       1.1.0:
-        path: "prompts/sql.md"
+        path: "instructions/sql.md"
 ```
 
 ## 2. The Configuration (`.arca-assets.yaml`)
@@ -35,8 +35,8 @@ assets:
     source: my-org
     version: "^1.0.0"
     projections:
-      default: ".github/prompts/sql.md"
-      cursor: ".cursor/prompts/sql.md"
+      default: ".github/instructions/sql.md"
+      cursor: ".cursor/rules/sql.md"
 ```
 
 ## 3. The Lockfile (`.arca-assets.lock`)

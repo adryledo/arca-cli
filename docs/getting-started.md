@@ -30,7 +30,7 @@ Create a `.arca-assets.yaml` file in your project root, or use the `install` com
 
 ```bash
 # Add an asset from a GitHub repository
-arca install https://github.com/org/assets my-asset --target .github/prompts/my-asset.md
+arca install https://github.com/org/assets my-asset --target .github/instructions/my-asset.md
 ```
 
 ### 3. Sync existing assets
@@ -48,7 +48,7 @@ Map an asset to specific AI assistants:
 
 ```bash
 # Map to both Copilot and Cursor locations
-arca install https://github.com/org/assets my-asset --name cursor --target .cursor/prompts/my-asset.md
+arca install https://github.com/org/assets my-asset --name cursor --target .cursor/rules/my-asset.md
 ```
 
 ### 5. Listing and Browsing
@@ -68,5 +68,5 @@ arca list --json
 
 ```bash
 # Add a new version of an asset to the local arca-manifest.yaml
-arca publish my-asset 1.2.0 prompt prompts/my-asset.md
+arca publish my-asset 1.2.0 instruction instructions/my-asset.md
 ```
