@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Pre-commit hook to enforce formatting, vetting and tests.
+set -euo pipefail
+
+echo "Running pre-commit checks: format -> vet -> test"
+
+# 1) Format check
+# gofmt is the standard formatter
+if command -v gofmt >/dev/null 2>&1; then
+  UNFORMATTED=$(gofmt -l . || true)
+  if [ -n "$UNFORMATTED" ]; then
+    echo "The following files are not formatted (run 'gofmt -w .'):"
+    echo "$UNFORMATTED"
+    exit 1
+  fi
+else
+  # fallback to go fmt if gofmt is not standalone
+  if command -v go >/dev/null 2>&1; then
+    echo "gofmt not found, using 'go fmt ./...'"
+    if ! go fmt ./...; then
+        echo "go fmt failed."
+        exit 1
+    fi
+    if [ -n "$(git status --porcelain)" ]; then
+      echo "Formatting changes were made by 'go fmt'. Please review and add them before committing."
+      git --no-pager status --porcelain
+      exit 1
+    fi
+  else
+    echo "Go command not found. Skipping format/vet/test."
+    exit 1
+  fi
+fi
+
+# 2) Vet
+if command -v go >/dev/null 2>&1; then
+  if ! go vet ./...; then
+    echo "go vet failed."
+    exit 1
+  fi
+  
+  # 3) Test
+  if ! go test ./...; then
+    echo "go test failed."
+    exit 1
+  fi
+else
+  echo "'go' not found in PATH."
+  exit 1
+fi
+
+echo "Pre-commit checks passed."
