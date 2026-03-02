@@ -32,6 +32,7 @@ sources:
     url: "https://github.com/my-org/agent-assets"
 assets:
   - id: sql-expert
+    kind: instruction
     source: my-org
     version: "^1.0.0"
     projections:

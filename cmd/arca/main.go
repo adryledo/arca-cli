@@ -182,6 +182,7 @@ var installCmd = &cobra.Command{
 			if item.ID == assetID {
 				entry := models.AssetEntry{
 					ID:      item.ID,
+					Kind:    item.Kind,
 					Source:  sourceAlias,
 					Version: item.Version,
 					Projections: map[string]string{
@@ -518,7 +519,7 @@ var listCmd = &cobra.Command{
 				status = "🟡 (unlocked)"
 			}
 
-			fmt.Printf("%s %s from %s\n", status, asset.ID, asset.Source)
+			fmt.Printf("%s %s (%s) from %s\n", status, asset.ID, asset.Kind, asset.Source)
 			fmt.Printf("   Version: %s\n", versionInfo)
 			for name, path := range asset.Projections {
 				fmt.Printf("   🔗 %s -> %s\n", name, path)
