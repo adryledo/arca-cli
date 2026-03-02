@@ -34,6 +34,7 @@ type SourceConfig struct {
 
 type AssetEntry struct {
 	ID          string            `yaml:"id"`
+	Kind        AssetKind         `yaml:"kind"`
 	Source      string            `yaml:"source"`
 	Version     string            `yaml:"version"`
 	Projections map[string]string `yaml:"projections"` // name -> path (e.g. "default" -> ".github/prompts/...")
