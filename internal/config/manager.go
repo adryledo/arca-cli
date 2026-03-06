@@ -144,7 +144,7 @@ func (m *Manager) deriveAlias(input string) string {
 	base := filepath.Base(filepath.ToSlash(input))
 	base = strings.TrimSuffix(base, ".git")
 
-	if base == "." || base == "/" || base == "" {
+	if base == "." || base == "/" || base == "\\" || base == "" {
 		return "source"
 	}
 
