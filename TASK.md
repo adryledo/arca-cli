@@ -32,8 +32,8 @@
     - [x] VS Code Extension Migration (TS logic -> arca binary)
     - [x] Generate instructions file or AGENTS.md. Test program in terminal, run tests and update docs on every change.
     - [x] 'prompts' kind don't exist anymore, remove all references to them. https://github.com/github/awesome-copilot/blob/main/website/src/content/learning-hub/github-copilot-terminology-glossary.md#prompt
-    - [ ] Add 'kind' to the assets files.
-    - [ ] `arca init --instructions=<instructionsFolder> --prompts=<promptsFolder> --skills=<skillsFolder>` command that browses the folders and creates the manifest file.
+    - [x] Add 'kind' to the assets files.
+    - [x] `arca init --instructions=<instructionsFolder> --skills=<skillsFolder>` command that browses the folders and creates the manifest file.
     - [ ] When installing a skill, check if it uses an mcp tool and return a warning if the tool is not installed.
     - [ ] Command to return manifest file instead of hardcoding in the client.
     - [ ] Roadmap, contributing, development guidelines, permissions on main branch.

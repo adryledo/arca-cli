@@ -63,6 +63,12 @@ CI guidance (recommended)
   6. Build `bin/arca` to verify compilation
 - Suggested GitHub Actions workflow: checkout, setup Go, format-check, vet, lint, test, build.
 
+Architecture & Design Guidelines
+- **KISS & DRY**: Keep it simple and don't repeat yourself.
+- **Command Structure**: Use the Cobra CLI framework. Each command MUST reside in its own dedicated file inside `cmd/arca/` (e.g., `init.go`, `install.go`, etc) rather than being bundled into a monolithic `main.go`.
+- `main.go` should remain lightweight, containing mostly the `rootCmd` definition and the `main()` execution entry point.
+- **Logic Separation**: Defer heavy business logic and API integrations to the `internal/` package directories to ensure commands act merely as a thin routing layer.
+
 Tooling & recommended configs
 - Formatter: `gofumpt` or built-in `gofmt`
 - Linter: `golangci-lint` with a conservative config
