@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    permissions:
+      contents: write # Needed to create a release
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Build AMD64
+        run: |
+          $env:GOOS = "windows"
+          $env:GOARCH = "amd64"
+          go build -o arca.exe ./cmd/arca
+          Compress-Archive -Path arca.exe -DestinationPath arca-windows-amd64.zip
+          Remove-Item arca.exe
+
+      - name: Build ARM64
+        run: |
+          $env:GOOS = "windows"
+          $env:GOARCH = "arm64"
+          go build -o arca.exe ./cmd/arca
+          Compress-Archive -Path arca.exe -DestinationPath arca-windows-arm64.zip
+          Remove-Item arca.exe
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            arca-windows-amd64.zip
+            arca-windows-arm64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Submit package to winget-pkgs
+        uses: vedantmgoyal2009/winget-Releaser@v2
+        with:
+          identifier: ARCA.CLI
+          installers-regex: '\.zip$'
+          token: ${{ secrets.GITHUB_TOKEN }}
