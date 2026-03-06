@@ -4,7 +4,7 @@ PackageVersion: 1.0.0
 PackageName: ARCA CLI
 Publisher: ARCA
 License: MIT
-ShortDescription: Asset Resolution for AI Assistants. Manage versioned prompts and skills.
+ShortDescription: Asset Resolution for AI Assistants. Manage versioned instructions and skills.
 Installers:
   - Architecture: x64
     InstallerType: zip

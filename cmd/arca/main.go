@@ -29,9 +29,11 @@ var rootCmd = &cobra.Command{
 }
 
 var (
-	targetPath string
-	projName   string
-	jsonOutput bool
+	targetPath         string
+	projName           string
+	jsonOutput         bool
+	instructionsFolder string
+	skillsFolder       string
 )
 
 func main() {
@@ -45,11 +47,177 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&jsonOutput, "json", "j", false, "Output in JSON format")
 	installCmd.Flags().StringVarP(&targetPath, "target", "t", "", "Projection target path")
 	installCmd.Flags().StringVarP(&projName, "name", "n", "default", "Projection name")
+
+	initCmd.Flags().StringVar(&instructionsFolder, "instructions", "instructions", "Folder containing instructions")
+	initCmd.Flags().StringVar(&skillsFolder, "skills", "skills", "Folder containing skills")
+
+	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(syncCmd)
 	rootCmd.AddCommand(listRemoteCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(publishCmd)
+}
+
+func extractDescription(filePath string, kind models.AssetKind) string {
+	if kind == models.KindSkill {
+		entries, err := os.ReadDir(filePath)
+		if err != nil {
+			return ""
+		}
+		found := false
+		for _, entry := range entries {
+			if !entry.IsDir() && strings.EqualFold(entry.Name(), "SKILL.md") {
+				filePath = filepath.Join(filePath, entry.Name())
+				found = true
+				break
+			}
+		}
+		if !found {
+			return ""
+		}
+	}
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return ""
+	}
+	content := string(data)
+	if strings.HasPrefix(content, "---\n") || strings.HasPrefix(content, "---\r\n") {
+		parts := strings.SplitN(content, "---", 3)
+		if len(parts) >= 3 {
+			var fm struct {
+				Description string `yaml:"description"`
+			}
+			if err := yaml.Unmarshal([]byte(parts[1]), &fm); err == nil {
+				return strings.TrimSpace(fm.Description)
+			}
+		}
+	}
+	return ""
+}
+
+var initCmd = &cobra.Command{
+	Use:   "init",
+	Short: "Initialize an arca-manifest.yaml file by scanning folders",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cwd, _ := os.Getwd()
+		manifestPath := filepath.Join(cwd, "arca-manifest.yaml")
+
+		manifest := models.Manifest{
+			Schema: "1.0",
+			Assets: make(map[string]models.ManifestAsset),
+		}
+
+		// Try to read existing manifest
+		data, err := os.ReadFile(manifestPath)
+		if err == nil {
+			if err := yaml.Unmarshal(data, &manifest); err != nil {
+				return fmt.Errorf("failed to parse existing manifest: %w", err)
+			}
+			if manifest.Assets == nil {
+				manifest.Assets = make(map[string]models.ManifestAsset)
+			}
+		}
+
+		addAssets := func(folder string, kind models.AssetKind, isDir bool) error {
+			if folder == "" {
+				return nil
+			}
+			fullPath := filepath.Join(cwd, folder)
+			if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+				fmt.Printf("⚠️  Folder %s not found, skipping.\n", folder)
+				return nil
+			}
+			fmt.Printf("🔍 Scanning %s for %s...\n", folder, kind)
+			entries, err := os.ReadDir(fullPath)
+			if err != nil {
+				return err
+			}
+			for _, entry := range entries {
+				if entry.IsDir() != isDir {
+					continue
+				}
+				name := entry.Name()
+				if strings.HasPrefix(name, ".") {
+					continue
+				}
+
+				var assetID string
+				if isDir {
+					assetID = name
+				} else {
+					assetID = strings.TrimSuffix(strings.TrimSuffix(name, filepath.Ext(name)), ".instructions")
+				}
+
+				relPath := filepath.ToSlash(filepath.Join(folder, name))
+
+				desc := fmt.Sprintf("Auto-discovered %s", kind)
+				if extDesc := extractDescription(filepath.Join(fullPath, entry.Name()), kind); extDesc != "" {
+					desc = extDesc
+				}
+
+				asset, ok := manifest.Assets[assetID]
+				if !ok {
+					asset = models.ManifestAsset{
+						Kind:        kind,
+						Description: desc,
+						Versions:    make(map[string]models.ManifestVersion),
+					}
+				}
+
+				if asset.Versions == nil {
+					asset.Versions = make(map[string]models.ManifestVersion)
+				}
+
+				if len(asset.Versions) == 0 {
+					asset.Versions["0.0.1"] = models.ManifestVersion{
+						Path: relPath,
+					}
+				} else {
+					var highestV *semver.Version
+					var highestVStr string
+					for vStr := range asset.Versions {
+						v, err := semver.NewVersion(vStr)
+						if err != nil {
+							continue
+						}
+						if highestV == nil || v.GreaterThan(highestV) {
+							highestV = v
+							highestVStr = vStr
+						}
+					}
+					if highestVStr != "" {
+						v := asset.Versions[highestVStr]
+						v.Path = relPath
+						asset.Versions[highestVStr] = v
+					}
+				}
+
+				manifest.Assets[assetID] = asset
+				fmt.Printf("   ✅ Added %s (%s)\n", assetID, kind)
+			}
+			return nil
+		}
+
+		if err := addAssets(instructionsFolder, models.KindInstruction, false); err != nil {
+			return err
+		}
+		if err := addAssets(skillsFolder, models.KindSkill, true); err != nil {
+			return err
+		}
+
+		newData, err := yaml.Marshal(manifest)
+		if err != nil {
+			return err
+		}
+
+		if err := os.WriteFile(manifestPath, newData, 0644); err != nil {
+			return err
+		}
+
+		fmt.Println("✨ arca-manifest.yaml generated successfully.")
+		return nil
+	},
 }
 
 var installCmd = &cobra.Command{
@@ -571,11 +739,16 @@ var publishCmd = &cobra.Command{
 			return fmt.Errorf("invalid asset kind: %s. Use 'skill', or 'instruction'", kindStr)
 		}
 
+		desc := "Added via arca publish"
+		if extDesc := extractDescription(assetFile, kind); extDesc != "" {
+			desc = extDesc
+		}
+
 		asset, ok := manifest.Assets[assetID]
 		if !ok {
 			asset = models.ManifestAsset{
 				Kind:        kind,
-				Description: "Added via arca publish", // TODO: Retrieve from 'description' in 'Front Matter' of the asset file.
+				Description: desc,
 				Versions:    make(map[string]models.ManifestVersion),
 			}
 		} else {
