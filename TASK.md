@@ -37,6 +37,6 @@
     - [ ] When installing a skill, check if it uses an mcp tool and return a warning if the tool is not installed.
     - [ ] Command to return manifest file instead of hardcoding in the client.
     - [ ] Roadmap, contributing, development guidelines, permissions on main branch.
-    - [ ] Installer generation (Homebrew, Winget automation)
+    - [x] Installer generation (Homebrew, Winget automation)
     - [ ] Asset auto-discovery subagent. Create an mcp server for arca that can be used to discover assets in all the repositories allowed.
     - [ ] Add new kinds: hooks, agents...
