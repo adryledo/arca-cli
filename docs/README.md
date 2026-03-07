@@ -79,6 +79,7 @@ flowchart LR
 - [🤝 Contribution Guide](./CONTRIBUTING.md) - How to improve ARCA.
 - [🗺️ Roadmap](./ROADMAP.md) - Future plans for ARCA.
 - [📜 Code of Conduct](./CODE_OF_CONDUCT.md) - Community standards.
+- [📋 Changelog](./CHANGELOG.md) - Version history and release notes.
 
 ## ⚖️ License
 

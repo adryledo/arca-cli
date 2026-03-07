@@ -9,6 +9,7 @@ This document outlines the planned trajectory for ARCA.
 - [x] 🔀 Multi-assistant projections
 - [x] 🧹 LF-normalization & SHA-256 verification
 - [x] 🌳 Recursive dependency resolution
+- [ ] 🧪 Workflow to run tests when PR is created
 
 ## 🔧 Phase 2: Enhanced Tooling
 - [x] 🖥️ Native [VS Code extension](https://github.com/adryledo/arca-vscode) for interactive asset selection
