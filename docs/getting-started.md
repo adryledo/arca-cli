@@ -1,39 +1,43 @@
-# Getting Started with ARCA
+# 🚀 Getting Started with ARCA
 
-## Installation
+## ⬇️ Installation
 
-### Windows (Winget)
+### 🪟 Windows (Winget)
 
 ```powershell
 winget install ARCA.CLI
 ```
 
-### macOS/Linux (Homebrew)
+### 🪟 Windows (Manual)
+
+Download the latest `arca.exe` from the [GitHub Releases](https://github.com/adryledo/arca-cli/releases) and add it to your PATH.
+
+### 🍎 macOS/Linux (Homebrew)
 
 ```bash
 brew install arca-cli/tap/arca
 ```
 
-### From Source
+### 🛠️ From Source
 
 ```bash
 go install github.com/adryledo/arca-cli/cmd/arca@latest
 ```
 
-## Basic Usage
+## 📖 Basic Usage
 
-### 1. Initialize a project
+### 1. 🏗️ Initialize a project
 
-Create a `.arca-assets.yaml` file in your project root, or use the `install` command.
+Use the `install` command to create the `.arca-assets.yaml` file in your project root
 
-### 2. Install an asset
+### 2. 📦 Install an asset
 
 ```bash
 # Add an asset from a GitHub repository
 arca install https://github.com/org/assets my-asset --target .github/instructions/my-asset.md
 ```
 
-### 3. Sync existing assets
+### 3. 🔄 Sync existing assets
 
 If you've cloned a project that already has an ARCA configuration:
 
@@ -42,7 +46,7 @@ If you've cloned a project that already has an ARCA configuration:
 arca sync
 ```
 
-### 4. Direct tool projections
+### 4. 🔀 Direct tool projections
 
 Map an asset to specific AI assistants:
 
@@ -51,7 +55,7 @@ Map an asset to specific AI assistants:
 arca install https://github.com/org/assets my-asset --name cursor --target .cursor/rules/my-asset.md
 ```
 
-### 5. Listing and Browsing
+### 5. 🔍 Listing and Browsing
 
 ```bash
 # List assets in a remote manifest
@@ -64,9 +68,12 @@ arca list
 arca list --json
 ```
 
-### 6. Maintainer Workflow
+### 6. 🧑‍💻 Maintainer Workflow
 
 ```bash
 # Add a new version of an asset to the local arca-manifest.yaml
 arca publish my-asset 1.2.0 instruction instructions/my-asset.md
 ```
+
+---
+[Previous: Purpose & Benefits](./purpose.md) | [Documentation Index](./README.md) | [Next: Protocol Deep-Dive](./protocol.md)

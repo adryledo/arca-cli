@@ -20,7 +20,7 @@
 - [ ] `go test ./...` passed
 - [ ] Linting: `golangci-lint run` passed or documented exceptions
 - [ ] Docs updated in `docs/` if user-facing behavior changed
-- [ ] `TASK.md` or `CHANGELOG` updated if behavior changed
+- [ ] `CHANGELOG` updated if behavior changed
 
 ## Labels (maintainer / agent use)
 - Suggested labels: `bug`, `feat`, `chore`, `docs`, `automation`

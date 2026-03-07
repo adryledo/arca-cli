@@ -32,3 +32,5 @@ go.work.sum
 # .vscode/
 
 samples/consumer/.gitignore
+
+bin/*
