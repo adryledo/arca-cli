@@ -8,6 +8,10 @@
 winget install ARCA.CLI
 ```
 
+### Windows (Manual)
+
+Download the latest `arca.exe` from the [GitHub Releases](https://github.com/adryledo/arca-cli/releases) and add it to your PATH.
+
 ### macOS/Linux (Homebrew)
 
 ```bash
@@ -70,3 +74,5 @@ arca list --json
 # Add a new version of an asset to the local arca-manifest.yaml
 arca publish my-asset 1.2.0 instruction instructions/my-asset.md
 ```
+---
+[Previous: Purpose & Benefits](./purpose.md) | [Documentation Index](./README.md) | [Next: Protocol Deep-Dive](./protocol.md)

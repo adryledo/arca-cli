@@ -15,9 +15,29 @@ ARCA provides a unified way for AI assistants—including coding agents (Copilot
 - **Strict Integrity**: SHA-256 verification with mandatory LF-normalization for cross-platform consistency.
 - **Mobile Friendly**: Built to run on Windows, macOS, Linux, Android, and iOS.
 
+## Quick Start
+
+1.  **Install ARCA**:
+    - See [Getting Started](./getting-started.md) for details.  
+    - Or use [arca-vscode](https://github.com/adryledo/arca-vscode) VS Code extension for interactive asset selection.
+2.  **Add an Asset**:
+    ```bash
+    arca install https://github.com/org/assets my-asset --target .github/instructions/my-asset.md
+    ```
+3.  **Sync**:
+    ```bash
+    arca sync
+    ```
+
 ## Documentation Index
 
-1. [Purpose & Benefits](./purpose.md) - Why we built ARCA.
-2. [Getting Started](./getting-started.md) - How to install and use the CLI.
-3. [Protocol Deep-Dive](./protocol.md) - How the manifests and resolution flows work.
-4. [Contribution Guide](./contributing.md) - How to improve ARCA.
+- [Purpose & Benefits](./purpose.md) - Why we built ARCA.
+- [Getting Started](./getting-started.md) - How to install and use the CLI.
+- [Protocol Deep-Dive](./protocol.md) - How the manifests and resolution flows work.
+- [Contribution Guide](./CONTRIBUTING.md) - How to improve ARCA.
+- [Roadmap](./ROADMAP.md) - Future plans for ARCA.
+- [Code of Conduct](./CODE_OF_CONDUCT.md) - Community standards.
+
+## License
+
+ARCA is released under the [MIT License](../LICENSE).

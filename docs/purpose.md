@@ -5,6 +5,10 @@
 Today, AI assistants (coding agents, web agents, etc.) rely on specialized assets like system instructions and multi-file "skills". These assets are often hardcoded into applications or scattered across repositories without version control.
 
 This leads to several issues:
+- **Domain clutter**: Assets are not part of the domain, but they are included in the project.
+- **Discoverability**: Hard to find assets for a specific purpose.
+- **Sharing**: Hard to share assets with other projects.
+- **Duplication**: Assets are often duplicated across repositories.
 - **Version Drift**: Different developers or tools using outdated versions of an instruction.
 - **No Traceability**: Losing track of why a specific instruction was changed.
 - **Platform Silos**: A "skill" built for one assistant is hard to use in another.
@@ -21,3 +25,6 @@ ARCA solves these problems by treating agentic assets as **first-class versioned
 3. **Security by Default**: Content-addressable hashing (SHA-256) ensures that what you run is exactly what was published.
 4. **Performance**: The Go-based core is designed for speed, ensuring that syncing assets happens in milliseconds, even in complex workspaces.
 5. **Decentralized**: No central "Store" required. Use your existing Git infrastructure or local file shares.
+
+---
+[Documentation Index](./README.md) | [Next: Getting Started](./getting-started.md)
