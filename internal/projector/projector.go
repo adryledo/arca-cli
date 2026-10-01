@@ -16,9 +16,35 @@ func New(workspaceRoot string) *Projector {
 	return &Projector{WorkspaceRoot: workspaceRoot}
 }
 
-// Project creates a symlink from cachedPath to targetPath.
+// Project creates a projection at targetPath pointing at cachedPath.
 // targetPath is relative to WorkspaceRoot.
 func (p *Projector) Project(cachedPath string, targetPath string, isDir bool) (string, error) {
+	// A projection must always point at real cached content. Without this
+	// guard a missing or empty cache entry silently becomes a broken
+	// projected skill (issue #9).
+	absCached, err := filepath.Abs(cachedPath)
+	if err != nil {
+		return "", fmt.Errorf("resolve cache path %s: %w", cachedPath, err)
+	}
+	cachedPath = absCached
+
+	info, err := os.Stat(cachedPath)
+	if err != nil {
+		return "", fmt.Errorf("cannot project %s: cache entry unavailable: %w", cachedPath, err)
+	}
+	if isDir {
+		if !info.IsDir() {
+			return "", fmt.Errorf("cannot project %s: expected a directory cache entry", cachedPath)
+		}
+		entries, err := os.ReadDir(cachedPath)
+		if err != nil {
+			return "", fmt.Errorf("cannot read cache dir %s: %w", cachedPath, err)
+		}
+		if len(entries) == 0 {
+			return "", fmt.Errorf("cannot project %s: cache directory is empty", cachedPath)
+		}
+	}
+
 	absTarget := filepath.Join(p.WorkspaceRoot, targetPath)
 
 	// Ensure parent dir exists
@@ -33,14 +59,10 @@ func (p *Projector) Project(cachedPath string, targetPath string, isDir bool) (s
 		}
 	}
 
-	// Create symlink
-	// On Windows, this may require SeCreateSymbolicLinkPrivilege (Developer Mode)
-	// or it may fail. We should consider a fallback to hardlink or copy in the future.
-	err := os.Symlink(cachedPath, absTarget)
-	if err != nil {
-		// Fallback for mobile or systems without symlink support: File Copy
-		// (Simplified for now, just trying symlink)
-		return "", fmt.Errorf("failed to create symlink: %w. Try enabling Developer Mode (Windows)", err)
+	// Platform-specific projection: symlink on POSIX, junction/hard link on
+	// Windows (see link_unix.go / link_windows.go).
+	if err := createLink(cachedPath, absTarget, isDir); err != nil {
+		return "", fmt.Errorf("failed to project %s -> %s: %w", absTarget, cachedPath, err)
 	}
 
 	// Ensure gitignored
