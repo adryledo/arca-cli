@@ -78,11 +78,19 @@ var installCmd = &cobra.Command{
 			isDir := item.Kind == models.KindSkill
 			commitSHA := ""
 			assetPath := cache.GetAssetPath(sourceAlias, item.ID, item.Version, isDir)
-			cacheDir, _ := cache.EnsureDir(sourceAlias, item.ID, item.Version)
+			cacheDir, err := cache.EnsureDir(sourceAlias, item.ID, item.Version)
+			if err != nil {
+				return fmt.Errorf("failed to create cache dir for %s: %w", item.ID, err)
+			}
 
 			if stype == models.SourceLocal {
 				absPath := filepath.Join(sourceStr, item.Meta.Path)
 				if isDir {
+					// Local directories must land in the cache exactly like
+					// git directories do, otherwise we project an empty dir.
+					if err := cache.PopulateDir(sourceAlias, item.ID, item.Version, absPath); err != nil {
+						return fmt.Errorf("failed to cache local directory asset %s: %w", item.ID, err)
+					}
 					commitSHA = "local"
 				} else {
 					data, err := os.ReadFile(absPath)

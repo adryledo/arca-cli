@@ -42,7 +42,7 @@ arca install https://github.com/org/assets my-asset --target .github/instruction
 If you've cloned a project that already has an ARCA configuration:
 
 ```bash
-# Downloads missed assets and restores symlinks
+# Re-downloads missing assets and restores projections
 arca sync
 ```
 
@@ -74,6 +74,17 @@ arca list --json
 # Add a new version of an asset to the local arca-manifest.yaml
 arca publish my-asset 1.2.0 instruction instructions/my-asset.md
 ```
+
+## 🔗 How projections are created
+
+ARCA never projects the raw source. The asset is always materialised in `~/.arca-cache` first, and the projection points at that cached copy — which is what `arca install`, `arca sync`, hashing and the lockfile all operate on.
+
+| Platform | Directory assets (`skill`) | File assets (`instruction`) |
+|----------|----------------------------|-----------------------------|
+| Linux / macOS | symlink | symlink |
+| Windows | junction (`mklink /J`, no elevation) | hard link (`mklink /H`), copy fallback |
+
+Projections are appended to `.gitignore` automatically. If the cache entry is missing or the cached directory is empty, `arca` fails with an error instead of creating a broken projection — including when the local source directory you are installing is itself empty.
 
 ---
 [Previous: Purpose & Benefits](./purpose.md) | [Documentation Index](./README.md) | [Next: Protocol Deep-Dive](./protocol.md)
