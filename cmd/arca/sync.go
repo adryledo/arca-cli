@@ -116,11 +116,19 @@ var syncCmd = &cobra.Command{
 			isDir := item.Kind == models.KindSkill
 			commitSHA := ""
 			assetPath := cache.GetAssetPath(item.SourceAlias, item.ID, version, isDir)
-			cacheDir, _ := cache.EnsureDir(item.SourceAlias, item.ID, version)
+			cacheDir, err := cache.EnsureDir(item.SourceAlias, item.ID, version)
+			if err != nil {
+				fmt.Printf("❌ Failed to create cache dir for %s: %v\n", item.ID, err)
+				continue
+			}
 
 			if item.Source.Type == models.SourceLocal {
 				absPath := filepath.Join(item.Source.Path, item.Meta.Path)
 				if isDir {
+					if err := cache.PopulateDir(item.SourceAlias, item.ID, version, absPath); err != nil {
+						fmt.Printf("❌ Failed to cache %s: %v\n", item.ID, err)
+						continue
+					}
 					commitSHA = "local"
 				} else {
 					data, err := os.ReadFile(absPath)
