@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### 🐛 Fixed
+- **Local directory assets now populate the cache** — `arca install` and `arca sync` copy a local `kind: skill` directory into `~/.arca-cache` before projecting it, so projected skills are no longer empty ([#9](https://github.com/adryledo/arca-cli/issues/9))
+- **Windows projections no longer require Developer Mode or administrator rights** — directories are projected with junctions (`mklink /J`) and files with hard links (`mklink /H`, falling back to a copy) instead of `os.Symlink` ([#9](https://github.com/adryledo/arca-cli/issues/9))
+- **Missing or empty cache entries are rejected** — `arca` reports an error instead of silently creating a broken projection
+
 ## [0.0.1](https://github.com/adryledo/arca-cli/releases/tag/v0.0.1) - 2026-03-07
 
 ### ✨ Added
